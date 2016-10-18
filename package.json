@@ -38,6 +38,8 @@
   },
   "dependencies": {
     "copy-paste": "^1.1.2",
-    "esprima": "^3.1.0"
+    "esprima": "^3.1.0",
+    "random-js": "^1.0.8",
+    "underscore": "^1.8.3"
   }
 }
