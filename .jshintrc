@@ -1,5 +1,5 @@
 {
     "maxerr" : 50,
     "strict" : false,
-    "asi" : true,
+    "asi" : true
 }
