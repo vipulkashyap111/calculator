@@ -20,10 +20,27 @@ function parseArgs()
         var builder = builders[node];
         builder.report();
     }
-
 }
 
 var builders = {};
+function TokenBuilder()
+{
+    this.detected = false;
+    this.value = null;
+
+    this.report = function()
+    {
+        console.log(
+            (
+                "Token Status:\n" + 
+                "==============\n" + 
+                    "Detected: {0}\t" + 
+                    "Value: {1}\n\n"
+            )
+            .format(this.detected, this.value)
+        );
+    }
+}
 
 // Represent a reusable "class" following the Builder pattern.
 function ComplexityBuilder()
@@ -31,6 +48,7 @@ function ComplexityBuilder()
     this.StartLine = 0;
     this.FunctionName = "";
     this.MaxConditions = 0;
+    this.MethodLength = 0;
 
     this.report = function()
     {
@@ -38,9 +56,10 @@ function ComplexityBuilder()
            (
             "{0}(): {1}\n" +
             "============\n" +
-                "MaxConditions: {2}\n\n"
+                "MaxConditions: {2}\t" +
+                "MethodLength: {3}\n\n"
             )
-            .format(this.FunctionName, this.StartLine, this.MaxConditions)
+            .format(this.FunctionName, this.StartLine, this.MaxConditions, this.MethodLength)
         );
     }
 };
@@ -105,6 +124,7 @@ function analyse(filePath)
 {
     var buf = fs.readFileSync(filePath, "utf8");
     var ast = esprima.parse(buf, options);
+    var tokens = esprima.tokenize(buf);
 
     var i = 0;
     // Tranverse program with a function visitor.
@@ -116,18 +136,35 @@ function analyse(filePath)
 
             // Function Name
             builder.FunctionName = functionName(node);
+            builder.MethodLength = node.loc.end.line - node.loc.start.line;
 
-            // Max Conditions
+            // Max Conditions && Method Length
             traverseWithParents(node, function(child){
-                if(child.type == 'IfStatement') {
-                    var builder = new ComplexityBuilder();
-                    builder.MaxConditions = countConditions(node);
+                if(child.type == 'IfStatement' && typeof child.test != "undefined") {
+                    var maxConditions = countConditions(child.test);
+                    if (maxConditions > builder.MaxConditions) {
+                        builder.MaxConditions = maxConditions;
+                    }
                 }
             });
 
             builders[builder.FunctionName] = builder;
         }
     });
+
+    var builder = new TokenBuilder();
+    builders['securityTokenDetection'] = builder;
+
+    for (var index in tokens) {
+        var token = tokens[index];
+        var tokenType = token.type;
+        var tokenValue = token.value.replace(/"/g, '');
+        if (tokenType == 'String' && tokenValue.length == 64) {
+            var builder = builders['securityTokenDetection'];
+            builder.detected = true;
+            builder.value = token.value.replace(/"/g, '');
+        }
+    }
 
 }
 
@@ -136,8 +173,8 @@ function countConditions(node){
     if (node.type != 'LogicalExpression')
         return 1;
 
-    var left = node.test.left;
-    var right = node.test.right;
+    var left = node.left;
+    var right = node.right;
 
     var leftConditions = countConditions(left);
     var rightConditions = countConditions(right);
