@@ -97,4 +97,3 @@ function getValue (exp) {
   return calc(exp)
 }
 
-var temp  = "2b40365f946a9ca212348f5abbe63923714e1a2d5537d090ed1dfdfec21e466e";
