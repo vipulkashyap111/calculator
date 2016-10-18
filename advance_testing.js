@@ -10,7 +10,6 @@ function main()
 
 	if( args.length == 0 )
 	{
-		//args = ["subject.js"];
 		args = ["./calc.js"];
 	}
 	var filePath = args[0];
@@ -123,7 +122,6 @@ function constraints(filePath)
 							var op = childNode.key.raw;
 							if(childNode.value.type === 'FunctionExpression'){
 								funcName = functionName(childNode.value);
-								console.log("Line : {0} Function: {1}".format(node.loc.start.line, funcName ));
 
 								var params = childNode.value.params.map(function(p) {return p.name});
 								functionConstraints[funcName] = {constraints:[], params: params};
@@ -184,7 +182,6 @@ function constraints(filePath)
 			}
 		}
 	});
-	console.log( "%j", functionConstraints);
 }
 
 
